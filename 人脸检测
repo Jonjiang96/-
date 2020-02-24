@@ -1,0 +1,72 @@
+import cv2 as cv
+import sys
+import os
+
+
+def get_face_data():
+    """
+        该函数用于获取人脸训练数据
+    :return: None
+    """
+    count = 0
+    # 加载眼睛分类器
+    eye_cascade = cv.CascadeClassifier('C:\\Users\\Jon\\AppData\\Local\\Programs\\Python\\Python36\\Lib'
+                                        '\\site-packages\\cv2\\data\\haarcascade_eye.xml')
+    # 加载人脸检测分类器
+    face_cascade = cv.CascadeClassifier('C:\\Users\\Jon\\AppData\\Local\\Programs\\Python\\Python36\\Lib'
+                                         '\\site-packages\\cv2\\data\\haarcascade_frontalface_alt.xml')
+    face_id_dir = input('请输入id:')
+    # 获取开启摄像头，获取图像帧'
+    cap = cv.VideoCapture(0)
+    if not cap.isOpened():
+        print('摄像头未开启，已退出。')
+        sys.exit()
+    while count < 100:
+        ret, frame = cap.read()
+        frame = cv.flip(frame, 1)
+        if not ret:
+            print('退出，未获取到图像。。')
+            break
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        # 检测脸部,返回每个人脸相对于整个窗口的相对坐标x，y，人脸的高度h, 宽度w
+        faceDetect = face_cascade.detectMultiScale(gray, 1.3, 5)
+        # 用蓝色矩形框标出人脸
+        for (x, y, w, h) in faceDetect:
+            cv.rectangle(img=frame, pt1=(x, y), pt2=(x+w, y+h), color=(225, 0, 0), thickness=5)
+            eye_scale = gray[y:y+h, x:x+w]
+            # 检测脸部区域的眼睛,返回每个人眼睛相对于脸部区域相对坐标x，y，高度h, 宽度w，在人脸区域检测眼睛
+            eyeDetect = eye_cascade.detectMultiScale(eye_scale, 1.3, 5)
+            #  用红色矩形框标出眼睛区域，眼睛坐标需计算至相对整个窗口的坐标值
+            for (ex, ey, ew, eh) in eyeDetect:
+                cv.rectangle(img=frame, pt1=(ex+x, ey+y), pt2=(ex+x+ew, ey+y+eh), color=(0, 0, 255), thickness=5)
+            # cv.rectangle(img=frame, pt1=(ex, ey), pt2=(ex+ew, ey+eh), color=(0, 255, 0), thickness=5)
+        # 存储训练图像数据每人100张
+        path = 'E:\\code\\python\\face_data\\' + str(face_id_dir)+'\\'
+        if not os.path.exists(path):
+            os.mkdir(path)
+        cv.waitKey(100)
+        Img_Name = path + str(face_id_dir) + '-' + str(count) + '.jpg'
+        print(Img_Name)
+        if count == 0:
+            print('数据采集中....')
+        cv.imwrite(Img_Name, frame)   # 写入并保存图像
+        count += 1
+        print(Img_Name)
+        cv.imshow('getData', frame)
+    print('数据采集完成，共%d张，退出。' % count)
+    cap.release()
+    cv.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    if input('是否确认采集训练数据？ (Y确认)>>:').upper() == 'Y':
+        get_face_data()    # 调用图像数据采集函数
+    print("即将结束程序,释放内存。")
+
+
+
+
+
+
+
+
